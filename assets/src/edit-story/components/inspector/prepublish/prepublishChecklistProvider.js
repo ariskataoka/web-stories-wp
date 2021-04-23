@@ -16,13 +16,16 @@
 /**
  * External dependencies
  */
-import { useCallback, useState, useEffect, useReducer } from 'react';
+import { useCallback, useState, useEffect, useMemo, useReducer } from 'react';
 import PropTypes from 'prop-types';
 /**
  * Internal dependencies
  */
 import { useStory } from '../../../app';
-import { getPrepublishErrors } from '../../../app/prepublish';
+import {
+  getPrepublishErrors,
+  PRE_PUBLISH_MESSAGE_TYPES,
+} from '../../../app/prepublish';
 import usePrevious from '../../../../design-system/utils/usePrevious';
 import { useLayout } from '../../../app/layout';
 import Context from './context';
@@ -43,6 +46,8 @@ function PrepublishChecklistProvider({ children }) {
   });
 
   const [currentList, setCurrentList] = useState([]);
+  const [isFirstPublishAttempt, setFirstPublishAttempt] = useState(false);
+  const [isHighPriorityEmpty, setIsHighPriorityEmpty] = useState(false);
 
   const handleRefreshList = useCallback(async () => {
     const pagesWithSize = story.pages.map((page) => ({
@@ -73,7 +78,6 @@ function PrepublishChecklistProvider({ children }) {
 
   // Check for different qualifications to be met to update current PPC checkpoint
   // 1. Story is no longer empty (ON_DIRTY_STORY)
-  // 2. Publish button is hit on a draft (ON_PUBLISH_CLICKED)
   // 3. Story has more than 4 pages
   useEffect(() => {
     if (story.pages.length > 4) {
@@ -81,12 +85,33 @@ function PrepublishChecklistProvider({ children }) {
     }
   }, [story?.pages]);
 
+  const highPriorityLength = useMemo(
+    () =>
+      currentList.filter(
+        (current) => current.type === PRE_PUBLISH_MESSAGE_TYPES.ERROR
+      ).length,
+    [currentList]
+  );
+
+  useEffect(() => {
+    if (checkpointState === PPC_CHECKPOINT_STATE.ALL && !highPriorityLength) {
+      setIsHighPriorityEmpty(true);
+    }
+  }, [checkpointState, highPriorityLength]);
+
+  const focusChecklistTab = useCallback(() => {
+    setFirstPublishAttempt(true);
+  }, [setFirstPublishAttempt]);
+
   return (
     <Context.Provider
       value={{
         checklist: currentList,
         refreshChecklist: handleRefreshList,
         currentCheckpoint: checkpointState,
+        isFirstPublishAttempt,
+        focusChecklistTab,
+        isHighPriorityEmpty,
       }}
     >
       {children}
