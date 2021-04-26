@@ -73,7 +73,7 @@ function PrepublishChecklistProvider({ children }) {
 
   const [checkpointState, dispatch] = useReducer(
     checkpointReducer,
-    PPC_CHECKPOINT_STATE.ALL
+    PPC_CHECKPOINT_STATE.ONLY_RECOMMENDED
   );
 
   // Check for different qualifications to be met to update current PPC checkpoint
@@ -95,7 +95,10 @@ function PrepublishChecklistProvider({ children }) {
 
   // this will prevent the review dialog from getting triggered again, do we want that?
   useEffect(() => {
-    if (checkpointState === PPC_CHECKPOINT_STATE.ALL && !highPriorityLength) {
+    if (
+      checkpointState === PPC_CHECKPOINT_STATE.ALL &&
+      highPriorityLength === 0
+    ) {
       setIsHighPriorityEmpty(true);
     }
   }, [checkpointState, highPriorityLength]);
