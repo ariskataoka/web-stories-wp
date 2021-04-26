@@ -75,7 +75,7 @@ function PrepublishChecklistProvider({ children }) {
 
   const [checkpointState, dispatch] = useReducer(
     checkpointReducer,
-    PPC_CHECKPOINT_STATE.ONLY_RECOMMENDED
+    PPC_CHECKPOINT_STATE.UNAVAILABLE
   );
 
   const highPriorityLength = useMemo(
