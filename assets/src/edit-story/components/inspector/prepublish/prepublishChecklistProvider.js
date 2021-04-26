@@ -46,7 +46,9 @@ function PrepublishChecklistProvider({ children }) {
   });
 
   const [currentList, setCurrentList] = useState([]);
-  const [isFirstPublishAttempt, setIsFirstPublishAttempt] = useState(false);
+  const [isChecklistReviewTriggered, setIsChecklistReviewTriggered] = useState(
+    false
+  );
   const [isHighPriorityEmpty, setIsHighPriorityEmpty] = useState(false);
 
   const handleRefreshList = useCallback(async () => {
@@ -76,15 +78,6 @@ function PrepublishChecklistProvider({ children }) {
     PPC_CHECKPOINT_STATE.ONLY_RECOMMENDED
   );
 
-  // Check for different qualifications to be met to update current PPC checkpoint
-  // 1. Story is no longer empty (ON_DIRTY_STORY)
-  // 3. Story has more than 4 pages
-  useEffect(() => {
-    if (story.pages.length > 4) {
-      dispatch(PPC_CHECKPOINT_ACTION.ON_STORY_HAS_5_PAGES);
-    }
-  }, [story?.pages]);
-
   const highPriorityLength = useMemo(
     () =>
       currentList.filter(
@@ -93,7 +86,7 @@ function PrepublishChecklistProvider({ children }) {
     [currentList]
   );
 
-  // this will prevent the review dialog from getting triggered again, do we want that?
+  // this will prevent the review dialog from getting triggered again
   useEffect(() => {
     if (
       checkpointState === PPC_CHECKPOINT_STATE.ALL &&
@@ -105,8 +98,19 @@ function PrepublishChecklistProvider({ children }) {
 
   const focusChecklistTab = useCallback(() => {
     dispatch(PPC_CHECKPOINT_ACTION.ON_PUBLISH_CLICKED);
-    setIsFirstPublishAttempt(true);
-  }, [setIsFirstPublishAttempt]);
+    setIsChecklistReviewTriggered(true);
+  }, [setIsChecklistReviewTriggered]);
+
+  // Use this when a published story gets turned back to a draft.
+  const resetReviewDialogTrigger = useCallback(() => {
+    setIsChecklistReviewTriggered(false);
+  }, []);
+
+  // Review dialog should be seen when there are high priority items and first publish still hasn't happened.
+  const shouldReviewDialogBeSeen = useMemo(
+    () => !isHighPriorityEmpty && !isChecklistReviewTriggered,
+    [isChecklistReviewTriggered, isHighPriorityEmpty]
+  );
 
   return (
     <Context.Provider
@@ -114,9 +118,11 @@ function PrepublishChecklistProvider({ children }) {
         checklist: currentList,
         refreshChecklist: handleRefreshList,
         currentCheckpoint: checkpointState,
-        isFirstPublishAttempt,
+        isChecklistReviewTriggered,
         focusChecklistTab,
+        resetReviewDialogTrigger,
         isHighPriorityEmpty,
+        shouldReviewDialogBeSeen,
       }}
     >
       {children}
